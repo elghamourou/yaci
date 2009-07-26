@@ -1,4 +1,4 @@
-#summary One-sentence summary of this page.
+#summary What YACI is and where I want it to go
 
 = Introduction =
 
