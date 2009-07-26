@@ -2,7 +2,7 @@
 
 = Introduction =
 
-YACI is tool to install diskfull nodes.
+YACI is tool to install diskfull nodes. This is part of the LLNL OS at ftp://gdo-lc.ucllnl.org/pub/projects/chaos/4.2
 
 = Current =
 
