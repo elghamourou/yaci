@@ -6,7 +6,7 @@ YACI is tool to install diskfull nodes.
 
 = Current =
 
-The current version of YACI is at
+The current version of YACI is at http://yaci.googlecode.com/files/yaci-12-8.ch4.2.noarch.rpm
 
 = Future =
 
