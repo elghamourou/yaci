@@ -31,6 +31,15 @@ mount_proc()
   mount -t proc none ${imagedir}/proc
 }
 
+# remove the image directory if requested
+remove_imagedir()
+{
+if [ -d "${imagedir}" ] && [ -z "${nodelete}" ] ; then
+    echo "Removing ${imagedir}"
+    rm -rf ${imagedir}
+fi
+}
+
 # Create directories that are required to build image
 make_image_dir()
 {
@@ -44,6 +53,16 @@ make_image_dir()
 init_rpmdb()
 {
   rpm --root ${imagedir} --initdb
+}
+
+# Call this function to get everything done
+prep_image_dir()
+{
+  umount_proc
+  remove_imagedir
+  make_image_dir
+  init_rpmdb
+  mount_proc
 }
 
 fi
