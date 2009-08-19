@@ -1,0 +1,49 @@
+#!/bin/bash
+
+###############################################################################
+# $URL$
+# $Author$
+# $Date$
+# $Rev$
+###############################################################################
+
+# prep directory for image creation
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin:/tmp
+
+umask 022
+
+if [ -z "$_PREP_IMAGE_DIR" ] ; then
+_PREP_IMAGE_DIR="loaded"
+
+# Source the variables
+. /tftpboot/scripts/variables
+
+# Make sure proc is not mounted in the image directory
+umount_proc()
+{
+  umount ${imagedir}/proc > /dev/null 2>&1
+}
+
+# Mount /proc in image directory
+mount_proc()
+{
+  mount -t proc none ${imagedir}/proc
+}
+
+# Create directories that are required to build image
+make_image_dir()
+{
+  mkdir -p ${imagedir}/proc
+  mkdir -p ${imagedir}/var/lib/{rpm,yum}
+  mkdir -p ${imagedir}/var/lock/rpm
+  mkdir -p ${imagedir}/var/log
+}
+
+# Create rpm DB in image directory
+init_rpmdb()
+{
+  rpm --root ${imagedir} --initdb
+}
+
+fi
