@@ -18,7 +18,7 @@ if [ -z "$_COPY_FUNCTIONS" ] ; then
 _COPY_FUNCTIONS="loaded"
 
 # Source variables
-. /tftpboot/scripts/variables
+. /tftpboot/etc/variables
 
 # Read localize files and copy stuff in
 copy_files()

@@ -17,7 +17,7 @@ if [ -z "$_DISK_FUNCTIONS" ] ; then
 _DISK_FUNCTIONS="loaded"
 
 # Source the variables
-. /tftpboot/scripts/variables
+. /tftpboot/etc/variables
 
 find_disk_device()
 {
