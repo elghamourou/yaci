@@ -1,0 +1,238 @@
+# These are variables that YACI uses
+################################################################################
+# variables,v 1.83 2005/09/21 19:29:15 tdhooge Exp
+################################################################################
+#  Copyright (C) 2001-2002 The Regents of the University of California.
+#  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+#  Written by Makia Minich <makia@llnl.gov> and Trent D'Hooge <tdhooge@llnl.gov>
+#  UCRL-CODE-2003-024.
+#  
+#  This file is part of YACI, a cluster installation tool.
+#  For details, see <http://www.llnl.gov/linux/yaci/>.
+#  
+#  YACI is free software; you can redistribute it and/or modify it under
+#  the terms of the GNU General Public License as published by the Free
+#  Software Foundation; either version 2 of the License, or (at your option)
+#  any later version.
+#  
+#  YACI is distributed in the hope that it will be useful, but WITHOUT ANY
+#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+#  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+#  details.
+#  
+#  You should have received a copy of the GNU General Public License along
+#  with YACI; if not, write to the Free Software Foundation, Inc.,
+#  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+################################################################################
+#
+
+# single load system
+if [ -z "$_YACI_VARIABLES" ] ; then
+_YACI_VARIABLES="loaded"
+
+################
+# SERIAL CONSOLE
+################
+# use_serial is to set default console
+# default is 115200,8n1 to ttyS0
+# set use_serial to the option you would want in the inittab
+# grub.conf / elilo.conf / yaboot.conf / lilo.conf / inittab 
+# will be updated with this info
+# also /tftpboot/pxelinux.cfg/default for the install will be updated
+# ia64 nodes may need SERIAL_PORT set to ttyS1
+# There is an example for pseries nodes, and monitor setup
+
+BAUD="115200"
+SERIAL_PORT="ttyS0"
+
+use_serial="s0:2345:respawn:/sbin/agetty -L ${BAUD} ${SERIAL_PORT}"
+
+# for a pseries node
+#use_serial="hvc0:1235:respawn:/sbin/agetty -L ${BAUD} hvc0 vt320"
+
+# send to monitor, no serial console
+#use_serial=""
+
+if [ -z "${use_serial}" ] ; then
+    console="console=tty0"
+else
+    console="console=tty0 console=${SERIAL_PORT},${BAUD}n8"
+fi
+
+##########
+# Timezone
+##########
+# Timezone
+timezone="PST8PDT"
+
+#######################
+# DEFAULT NETWORK STUFF
+#######################
+# The interface to have YACI setup
+# based on IP given at boot time
+DEVICE="eth0"
+
+##################################################
+# Allow YACI to attempt to create the modules.conf
+##################################################
+# Set to YES if you want this
+# If you don't I would suggest putting your modules.conf in
+# /tftpboot/local/%etc%modules.conf
+# This will allow YACI to still attempt to make the ramdisk 
+# for your kernel
+MODULES="YES"
+
+##########################################################################
+# What modules to put into the initrd, when the modprobe.conf is not right
+##########################################################################
+FS="ext3 jbd jfs reiserfs xfs"
+NETWORK=""
+CONTROLLERS="ide-core ide-generic aic7xxx aic79xx aacraid \
+             ata_piix dpt_i2o sata_nv sata_promise sata_via sata_sil \
+             scsi_mod sd_mod sg mptbase mptscsih"
+MISC="rtc"
+
+I_MODULES="${FS} ${NETWORK} ${CONTROLLERS} ${MISC}"
+
+# LOCATIONS
+yaci_loc="/tftpboot"
+system_mount="/mnt/system"
+
+local_files="${yaci_loc}/local"
+pxe_dir="${yaci_loc}/pxelinux.cfg"
+: ${rpm_dir=${yaci_loc}/rpms}
+yaci_etc="${yaci_loc}/etc"
+yaci_images="${yaci_loc}/images"
+yaci_scripts="${yaci_loc}/scripts"
+yaci_functions="${yaci_scripts}/functions"
+yaci_tars="${yaci_loc}/tarfiles"
+yaci_tools="${yaci_loc}/tools"
+yaci_ramdisk="${yaci_loc}/ramdisk"
+yaci_elilo="${yaci_loc}/elilo"
+ssh_dir="${yaci_ramdisk}/localized/ssh"
+
+#################
+# MULTICAST STUFF
+#################
+MULTICAST="NO"
+MAX_BITRATE="50m"
+DUPLEX="--full-duplex"
+#DUPLEX="--half-duplex"
+# Interface on sending node
+INTERFACE="eth0"
+
+# Allow nodes to just install
+# and what image to give them
+ALLOW_ANY="NO"
+DEFAULT_IMAGE="MONKEY"
+
+# To just collect MAC address from
+# console output
+COLLECT_MAC="NO"
+
+# Do you want to use parted for
+# partitioning?
+# NOT SUPPORTED
+USE_PARTED="NO"
+
+# If you want to fsck the disk on reboot
+# after an install, set to YES
+FORCEFSCK="NO"
+
+######################
+# Network card options
+######################
+# Uncomment what you think might be useful if
+# if your network card did not negotiate right
+# mii-tool and ethtool support different cards
+# note hard coded eth0
+#NET_DEV_SETTING="mii-tool -F 100baseTx-FD eth0"
+#NET_DEV_SETTING="ethtool -s eth0 speed 100 duplex full autoneg off"
+
+######
+# MISC
+######
+arch=`uname -m`
+
+#########
+# RAMDISK
+#########
+BUILD_RAMDISK="YES"
+# BUILD_RAMDISK="NO"
+
+###############
+# Ramdisk files
+# Need for YACI
+###############
+BASE_RAMDISK_FILES="awk basename bash cat chmod chown chroot cmp cp date dd gzip depmod df dmesg du e2fsck e2label echo efibootmgr egrep eject expr fdisk free grep grub hdparm head hostname hwclock ifconfig kill killall ls ln find lspci mkdir mkdosfs mke2fs mkfs.vfat mkswap mount mount.nfs mv ntpdate parted paste ps rm rsync sed seq sfdisk sleep sort swapon sync stat tar tail touch tr tune2fs umount uniq uname wc yaboot mii-tool ethtool halt clear init shutdown "
+
+###############################
+# Extra stuff to put in ramdisk
+# Put what you want here
+###############################
+#EXTRA_RAMDISK_FILES="fsck mkinitrd rpm udev vim sshd "
+EXTRA_RAMDISK_FILES="vim "
+
+RAMDISK_FILES="${BASE_RAMDISK_FILES} ${EXTRA_RAMDISK_FILES}"
+
+###########
+# RPM stuff
+###########
+# Dont check signature on rpm
+NOSIGNATURE="--nosignature"
+# if using older rpm
+#NOSIGNATURE=""
+# Use rpm aid
+AID="--aid"
+# if using older rpm
+#AID=""
+# Force install of rpms if not making rpm deps.
+FORCE="NO"
+# This will pass the ignorearch to rpm
+# useful if installing an rpm that is not the 
+# right arch
+# DO NOT use this unless you are sure of 
+# what you are doing
+#IGNOREARCH="YES"
+
+###################################
+# Native POSIX Thread Library stuff
+# Use NPTL
+###################################
+LD_ASSUME_KERNEL=""
+# Don't use NPTL
+#LD_ASSUME_KERNEL="2.4.18"
+
+########################################
+# Take the image off an installed system
+########################################
+# Set COPY_DISK to location of "/"
+# This is so we find the fstab and get everything mounted
+#COPY_DISK="/dev/hda5"
+#COPY_DISK_IMAGE_NAME="monkey"
+#######################################
+# If installing from a COPY, set to yes
+#######################################
+#INSTALL_COPY="YES"
+
+##################################
+# Have a node build it's own image
+##################################
+# This is useful if building server is one arch
+# and the other node is of a different arch.
+# Set LOOP_BACK_CREATE to image name
+# install will look for $YACI_LOC/etc/$TYPE/rpmlist
+# By default the image is created on the server
+# in the default location ( /tftpboot/images/$TYPE.$ARCH )
+# If you set USE_RAM to YES it will build the image in ram
+# I have no way of knowing how much ram you need so
+# set that option with caution
+# No matter how you do this the tarfile will be put into
+# $YACI_TARS
+# This does not install the node, only creates the image
+
+#LOOP_BACK_CREATE="monkey"
+#LOOP_BACK_P0ST_SCRIPT="post_script.${LOOP_BACK_CREATE}"
+#USE_RAM="YES"
+
+fi
