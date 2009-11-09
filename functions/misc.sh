@@ -19,7 +19,7 @@ _MISC_STUFF="loaded"
 # Source the variables
 . /tftpboot/etc/variables
 
-# Mount /proc in image directory
+# Run post create script
 post_create()
 {
 if [ ! -z "${postcreate}}" ]; then
