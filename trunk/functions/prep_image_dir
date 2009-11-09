@@ -17,18 +17,31 @@ if [ -z "$_PREP_IMAGE_DIR" ] ; then
 _PREP_IMAGE_DIR="loaded"
 
 # Source the variables
-. /tftpboot/scripts/variables
+. /tftpboot/etc/variables
 
 # Make sure proc is not mounted in the image directory
 umount_proc()
 {
-  umount ${imagedir}/proc > /dev/null 2>&1
+  umount -f ${imagedir}/proc > /dev/null 2>&1
 }
 
 # Mount /proc in image directory
 mount_proc()
 {
   mount -t proc none ${imagedir}/proc
+}
+
+# Make sure dev is not mounted in the image directory
+umount_dev()
+{
+  umount -f ${imagedir}/dev > /dev/null 2>&1
+}
+
+# Mount /dev in image directory
+# imagedir may be mounted with nodev option
+mount_dev()
+{
+  mount -t tmpfs /dev ${image_dir}/dev
 }
 
 # remove the image directory if requested
@@ -38,6 +51,13 @@ if [ -d "${imagedir}" ] && [ -z "${nodelete}" ] ; then
     echo "Removing ${imagedir}"
     rm -rf ${imagedir}
 fi
+}
+
+# Create files that are required to build image
+make_image_files()
+{
+  mknod ${image_dir}/dev/null c 1 3
+  chmod 666 ${image_dir}/dev/null
 }
 
 # Create directories that are required to build image
@@ -59,10 +79,13 @@ init_rpmdb()
 prep_image_dir()
 {
   umount_proc
+  umount_dev
   remove_imagedir
   make_image_dir
-  init_rpmdb
   mount_proc
+  mount_dev
+  make_image_files
+  init_rpmdb
 }
 
 fi

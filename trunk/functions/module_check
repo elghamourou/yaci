@@ -17,7 +17,7 @@ if [ -z "$_MODULE_CHECK" ] ; then
 _MODULE_CHECK="loaded"
 
 # Source the variables
-. /tftpboot/scripts/variables
+. /tftpboot/etc/variables
 
 # Usage: what_module class type
 # look at pcibus for class and print module required for it

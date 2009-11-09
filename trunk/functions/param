@@ -18,7 +18,7 @@ if [ -z "$_PARAM_FUNCTIONS" ] ; then
 _PARAM_FUNCTIONS="loaded"
 
 # Source the variables
-. /tftpboot/scripts/variables
+. /tftpboot/etc/variables
 
 # Source functions
 . ${yaci_functions}/network
