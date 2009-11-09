@@ -64,6 +64,8 @@ make_image_files()
 make_image_dir()
 {
   mkdir -p ${imagedir}/proc
+  mkdir -p ${imagedir}/dev
+  mkdir -p ${imagedir}/etc
   mkdir -p ${imagedir}/var/lib/{rpm,yum}
   mkdir -p ${imagedir}/var/lock/rpm
   mkdir -p ${imagedir}/var/log
@@ -86,6 +88,22 @@ prep_image_dir()
   mount_dev
   make_image_files
   init_rpmdb
+}
+
+# Image clean up before tar'ing it up
+image_clean_up()
+{
+  umount_dev
+  umount_proc
+  # lastlog can sometime be a large sparse file that causes tar issues
+  cat /dev/null > ${image_dir}/var/log/lastlog
+
+  # make sure rpm cache is ok
+  rm -f ${image_dir}/var/lib/rpm/__*
+  chroot ${image_dir} rpm --rebuilddb
+
+  # Make sure ldconfig is run
+  chroot ${image_dir} ldconfig
 }
 
 fi

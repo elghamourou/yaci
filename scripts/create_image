@@ -1,0 +1,192 @@
+#!/bin/bash
+################################################################################
+# create_image,v 1.74 2005/09/29 16:28:50 tdhooge Exp
+################################################################################
+#  Copyright (C) 2001-2002 The Regents of the University of California.
+#  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+#  Written by Makia Minich <makia@llnl.gov> and Trent D'Hooge <tdhooge@llnl.gov>
+#  UCRL-CODE-2003-024.
+#  
+#  This file is part of YACI, a cluster installation tool.
+#  For details, see <http://www.llnl.gov/linux/yaci/>.
+#  
+#  YACI is free software; you can redistribute it and/or modify it under
+#  the terms of the GNU General Public License as published by the Free
+#  Software Foundation; either version 2 of the License, or (at your option)
+#  any later version.
+#  
+#  YACI is distributed in the hope that it will be useful, but WITHOUT ANY
+#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+#  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+#  details.
+#  
+#  You should have received a copy of the GNU General Public License along
+#  with YACI; if not, write to the Free Software Foundation, Inc.,
+#  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+################################################################################
+#
+
+PATH=/sbin:/bin:/usr/bin:/usr/sbin:/tmp
+
+umask 022
+
+declare -r prog=${0##*/}
+declare -r long_opts="image:,rpmlist:,yum:,postcreate:notar,help"
+declare -r short_opts="i:nr:y:p:h"
+declare -r getopt="/usr/bin/getopt -u"
+declare -r usage="\
+\n\
+\n\
+USAGE: $prog -i name [OPTIONS]
+\n\
+yum_groups and rpms are space delimited
+\n\
+   -i, --image name             Name of the image you want created\n\
+\n\
+   -n, --notar                  Create image only, no install files will be\n\
+                                made. No partition list is required\n
+\n\
+   -p, --postcreate script      Name of script that you want run inside\n\
+                                image after image has been created\n\
+\n\
+   -r, --rpmlist file           File that has list of rpms you what installed\n\
+\n\
+   -y, --yum group|rpm          Yum will be used, pass if using yum groups,\n\
+                                or just installing rpms from yum repo.\n\
+                                If rpmlist is defined this will be ignored\n\
+\n\
+   -h, --help                   Display usage message\n"
+
+die () {
+    echo -e "$prog: $@" >&2
+    exit 1
+}
+
+# Source variables
+. /tftpboot/etc/variables
+
+GETOPT=`$getopt -o $short_opts -l $long_opts -n $prog -- $@`
+
+if [ $? != 0 ] ; then
+    die "$usage"
+fi
+
+# define stuff
+image=""
+notar=""
+rpmlist=""
+
+eval set -- "$GETOPT"
+while true; do
+    case "$1" in
+        -i|--image)        image=$2         ; shift 2 ;;
+        -n|--notar)        notar=1          ; shift   ;;
+        -p|--postcreate)   postcreate=$2   ; shift 2 ;;
+        -r|--rpmlist)      rpmlist=$2       ; shift 2 ;;
+        -y|--yum)          yuminstall=$2    ; shift 2 ;;
+        -h|--help)         die "$usage"               ;;
+        --)                shift ; break              ;;
+        *)                 die "$usage"               ;;
+    esac
+done
+
+# verify something is defined
+[ -z ${image} ] && die "$usage"
+
+# Source functions
+for i in ${yaci_functions}/*.sh ; do
+  if [ -r "$i" ]; then
+    . $i
+  fi
+done
+
+# make sure that the partition info is there
+if [ ! -r ${yaci_etc}/partition_list.${image} ] && [ -z ${notar} ] ; then
+    echo "Please setup ${yaci_etc}/partition_list.${image}"
+    exit 1;
+fi
+
+# Make sure you are root, else there will be problems
+if [ `id -u` != "0" ] ; then
+    echo "Please become root and have the group id root before creating image"
+    exit 1
+elif [ `id -g` != "0" ] ; then
+    echo "Please become root and have the group id root before creating image"
+    exit 1
+fi
+
+# make sure SELinux is disabled, because it interferes with the execution of
+# the packages' %post and %pre scripts
+if [ -f /usr/sbin/selinuxenabled ] ; then
+  /usr/sbin/selinuxenabled
+  if [ $? = 0 ] ; then
+    echo "SELinux is enabled and it interferes with RPMS installation."
+    echo "Please disabled SELinux in /etc/sysconfig/selinux and reboot."
+    exit 1
+  fi
+fi
+
+# if defining rpmlist, verify it can be read
+[ -n ${rpmlist} && [ ! -r ${rpmlist} ] \
+  && echo "Can't read ${rpmlist}" && exit 1
+
+# verify all the rpms are there
+[ -n ${rpmlist} && verify_rpms || exit 1
+
+# directory and tarball to produce
+image_dir=${yaci_images}/${image}.${arch}
+image_tar=${yaci_tars}/${image}.${arch}.tgz
+
+# Create directory for image
+prep_image_dir
+
+# get passwd/group/shadow file for rpms
+cp -p /etc/passwd /etc/group /etc/shadow ${image_dir}/etc/
+
+# Set timezone
+ln -sf /usr/share/zoneinfo/${timezone} \
+       ${image_dir}/etc/localtime
+
+# create image with rpm, yum or fail
+if [ -n ${rpmlist} ] ; then
+  rpm_install
+elif [ -n ${yuminstall} ] ; then 
+  # Need at least one rpm or yum group
+  [ $# -lt 1 ] && die "$usage"
+  packages="$@"
+  yum_install
+else
+  die "$usage"
+fi
+
+# Copy local files as specified by ${local_files}/localize*
+copy_files
+
+# put in inittab option for console
+if [ ! -z "${use_serial}" ] ; then
+    echo -e "\n# Put here by YACI" >> ${image_dir}/etc/inittab
+    echo "${use_serial}" >> ${image_dir}/etc/inittab
+fi
+
+# Run the post create script
+post_create
+
+# unmount and clean up image
+image_clean_up
+
+# Just create image and exit
+if [ -n "${notar}" ] ; then
+    exit 0
+fi
+
+# Create tarball of imagedir
+echo "Creating ${IMAGE} tarball"
+pushd ${image_dir} >/dev/null && \
+    tar -czpf ${image_tar} *
+popd >/dev/null
+
+# create disk files
+echo "Creating disk files." && create_disk_files
+
+# create ramdisk
+create_ramdisk
