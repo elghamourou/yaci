@@ -47,10 +47,11 @@ mount_dev()
 # remove the image directory if requested
 remove_imagedir()
 {
-if [ -d "${imagedir}" ] && [ -z "${nodelete}" ] ; then
+  #if [ -d "${imagedir}" ] && [ -z "${nodelete}" ] ; then
+  if [ -d "${imagedir}" ] ; then
     echo "Removing ${imagedir}"
     rm -rf ${imagedir}
-fi
+  fi
 }
 
 # Create files that are required to build image
