@@ -22,6 +22,17 @@ _YUM_INSTALL="loaded"
 # install image with yum
 yum_install()
 {
+  if [ ${#} -lt 2 ]; then
+    echo "USAGE: $0 yum_install_type package(s)|groups(s)"
+    return 1;
+  fi
+  
+  # yum install type
+  local yuminstall=$1 && shift
+
+  # image name
+  local packages="$@"
+
   yum -d 0 clean all
 
   if [ "${yuminstall}" == group ] ; then
@@ -30,7 +41,7 @@ yum_install()
     install_cmd="install"
   else
     echo "${yuminstall} not valid, please use group or rpm"
-    exit 1
+    return 1
   fi
 
   yum ${install_cmd} -y --installroot ${imagedir} ${packages}

@@ -22,6 +22,17 @@ _RPM_INSTALL="loaded"
 # Mount /proc in image directory
 rpm_install()
 {
+  if [ ${#} -lt 2 ]; then
+    echo "USAGE: $0 rpmlist image_dir"
+    return 1;
+  fi
+  
+  # image name
+  local rpmlist=$1
+
+  # image dir
+  local image_dir=$2
+
   rpms=`cat ${rpmlist} | sort | uniq | paste -s -d ' '`
 
   pushd ${rpm_dir} >/dev/null && \
@@ -31,6 +42,14 @@ rpm_install()
 
 verify_rpms()
 {
+  if [ ${#} -lt 1 ]; then
+    echo "USAGE: $0 rpmlist"
+    return 1;
+  fi
+  
+  # image name
+  local rpmlist=$1
+
   cat ${rpmlist} |
   while read rpm ; do
     for r in ${rpm_dir}/${rpm} ; do
@@ -45,7 +64,7 @@ verify_rpms()
     for a in `seq 0 ${#badrpm}` ; do
       echo "${badrpm[$a]}"
     done
-    exit 1
+    return 1
   fi
 }
 

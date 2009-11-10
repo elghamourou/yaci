@@ -22,10 +22,21 @@ _MISC_STUFF="loaded"
 # Run post create script
 post_create()
 {
-if [ ! -z "${postcreate}}" ]; then
+
+  if [ ${#} -lt 2 ]; then
+    echo "USAGE: $0 imagedir post_create_script"
+    return 1;
+  fi
+  
+  # image name
+  local imagedir=$1
+  
+  # post create script
+  local postcreate=$2
+
   if [ ! -e "${postcreate}" ]; then
     echo -e "\nCan not find post create script ${postcreate}\n"
-    exit 1;
+    return 1;
   else
     cp -p ${postcreate} ${image_dir}/tmp/POST_CREATE
     if [ -x ${postcreate} ] ; then
@@ -35,7 +46,6 @@ if [ ! -z "${postcreate}}" ]; then
     fi
     rm ${image_dir}/tmp/POST_CREATE
   fi
-fi
 }
 
 # Create ramdisk for use by YACI and a static kernel
