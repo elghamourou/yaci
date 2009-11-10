@@ -1,30 +1,11 @@
 #!/bin/bash
-################################################################################
-# create_image,v 1.74 2005/09/29 16:28:50 tdhooge Exp
-################################################################################
-#  Copyright (C) 2001-2002 The Regents of the University of California.
-#  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
-#  Written by Makia Minich <makia@llnl.gov> and Trent D'Hooge <tdhooge@llnl.gov>
-#  UCRL-CODE-2003-024.
-#  
-#  This file is part of YACI, a cluster installation tool.
-#  For details, see <http://www.llnl.gov/linux/yaci/>.
-#  
-#  YACI is free software; you can redistribute it and/or modify it under
-#  the terms of the GNU General Public License as published by the Free
-#  Software Foundation; either version 2 of the License, or (at your option)
-#  any later version.
-#  
-#  YACI is distributed in the hope that it will be useful, but WITHOUT ANY
-#  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-#  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-#  details.
-#  
-#  You should have received a copy of the GNU General Public License along
-#  with YACI; if not, write to the Free Software Foundation, Inc.,
-#  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
-################################################################################
-#
+
+###############################################################################
+# $URL: https://yaci.googlecode.com/svn/trunk/functions/disk.sh $
+# $Author: tdhooge@harco.com $
+# $Date: 2009-11-09 13:17:20 -0800 (Mon, 09 Nov 2009) $
+# $Rev: 15 $
+###############################################################################
 
 PATH=/sbin:/bin:/usr/bin:/usr/sbin:/tmp
 
@@ -131,14 +112,14 @@ fi
   && echo "Can't read ${rpmlist}" && exit 1
 
 # verify all the rpms are there
-[ -n ${rpmlist} && verify_rpms || exit 1
+[ -n ${rpmlist} && verify_rpms ${rpmlist} || exit 1
 
 # directory and tarball to produce
 image_dir=${yaci_images}/${image}.${arch}
 image_tar=${yaci_tars}/${image}.${arch}.tgz
 
 # Create directory for image
-prep_image_dir
+prep_image_dir ${image_dir}
 
 # get passwd/group/shadow file for rpms
 cp -p /etc/passwd /etc/group /etc/shadow ${image_dir}/etc/
@@ -149,18 +130,18 @@ ln -sf /usr/share/zoneinfo/${timezone} \
 
 # create image with rpm, yum or fail
 if [ -n ${rpmlist} ] ; then
-  rpm_install
+  rpm_install ${rpmlist} ${image_dir}
 elif [ -n ${yuminstall} ] ; then 
   # Need at least one rpm or yum group
   [ $# -lt 1 ] && die "$usage"
   packages="$@"
-  yum_install
+  yum_install ${yuminstall} ${packages}
 else
   die "$usage"
 fi
 
 # Copy local files as specified by ${local_files}/localize*
-copy_files
+copy_files ${image} ${arch}
 
 # put in inittab option for console
 if [ ! -z "${use_serial}" ] ; then
@@ -169,10 +150,12 @@ if [ ! -z "${use_serial}" ] ; then
 fi
 
 # Run the post create script
-post_create
+if [ ! -z "${postcreate}" ] ; then
+  post_create ${image_dir} ${postcreate}
+fi
 
 # unmount and clean up image
-image_clean_up
+image_clean_up ${image_dir}
 
 # Just create image and exit
 if [ -n "${notar}" ] ; then
